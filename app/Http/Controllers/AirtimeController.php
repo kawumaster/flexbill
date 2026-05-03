@@ -21,30 +21,61 @@ public function index()
     return view('airtime.buy'); // create this view
 }
 
+//auto detect function
+
+private function detectNetwork($phone)
+{
+    $prefix4 = substr($phone, 0, 4);
+    $prefix5 = substr($phone, 0, 5);
+
+    $networks = [
+        'mtn' => ['0801','0803','0806','0813','0816','0810','0814','0903','0906','0703','0706','0704','07025','07026'],
+        'glo' => ['0805','0807','0815','0811','0905','0705'],
+        'airtel' => ['0802','0808','0812','0701','0708','0902','0907','0901'],
+        '9mobile' => ['0809','0817','0818','0909','0908']
+    ];
+
+    foreach ($networks as $network => $prefixes) {
+        if (in_array($prefix4, $prefixes) || in_array($prefix5, $prefixes)) {
+            return $network;
+        }
+    }
+
+    return null;
+}
+
 public function buyAirtime(Request $request)
 {
     $request->validate([
-        'phone' => 'required',
-        'amount' => 'required|numeric|min:100',
-        'network' => 'required'
+        'phone' => 'required|digits:11',
+        'amount' => 'required|numeric|min:50'
     ]);
 
-    $user = auth()->user();
-    $wallet = $user->wallet;
+    $network = $this->detectNetwork($request->phone);
 
-    if ($wallet->balance < $request->amount) {
-        return back()->with('error', 'Insufficient wallet balance');
+    if (!$network) {
+        return back()->with('error', 'Invalid phone number');
     }
+
+    $user = auth()->user();
 
     DB::beginTransaction();
 
     try {
 
-        // Deduct
+        // 🔒 lock wallet
+        $wallet = $user->wallet()->lockForUpdate()->first();
+
+        if ($wallet->balance < $request->amount) {
+            DB::rollBack(); // ✅ FIX
+            return back()->with('error', 'Insufficient balance');
+        }
+
+        // 💸 deduct
         $wallet->balance -= $request->amount;
         $wallet->save();
 
-        // Transaction record
+        // 🧾 transaction
         $tx = Transaction::create([
             'user_id' => $user->id,
             'type' => 'airtime',
@@ -53,25 +84,27 @@ public function buyAirtime(Request $request)
             'reference' => uniqid('VTU-')
         ]);
 
-        // Call VTpass
+        // 🚀 API CALL
         $response = Http::withHeaders([
-    'api-key' => env('VTPASS_API_KEY'),
-    'secret-key' => env('VTPASS_SECRET_KEY'),
-    'Content-Type' => 'application/json',
-    'Accept' => 'application/json',
-])->post(env('VTPASS_BASE_URL') . '/api/pay', [
-    'request_id' => $tx->reference,
-    'serviceID' => $request->network,
-    'amount' => $request->amount,
-    'phone' => $request->phone,
-]);
+            'api-key' => env('VTPASS_API_KEY'),
+            'secret-key' => env('VTPASS_SECRET_KEY'),
+            'Content-Type' => 'application/json',
+        ])->post(env('VTPASS_BASE_URL').'/api/pay', [
+            'request_id' => $tx->reference,
+            'serviceID' => $network,
+            'amount' => $request->amount,
+            'phone' => $request->phone,
+        ]);
 
         $result = $response->json();
 
-        \Log::info('VTU RESPONSE:', ['data' => $result]);
+        \Log::info('AIRTIME RESPONSE', $result ?? []);
 
-        // SUCCESS
-        if (isset($result['code']) && $result['code'] == '000') {
+        $desc = strtolower($result['response_description'] ?? '');
+        $code = $result['code'] ?? null;
+
+        // ✅ STRONG SUCCESS CHECK
+        if ($code == '000' || str_contains($desc, 'successful')) {
 
             $tx->update(['status' => 'success']);
 
@@ -80,7 +113,7 @@ public function buyAirtime(Request $request)
             return back()->with('success', 'Airtime sent successfully');
         }
 
-        // FAIL → REFUND
+        // ❌ refund
         $wallet->balance += $request->amount;
         $wallet->save();
 
@@ -88,13 +121,13 @@ public function buyAirtime(Request $request)
 
         DB::commit();
 
-        return back()->with('error', 'Airtime failed → Refunded');
+        return back()->with('error', 'Failed → Refunded');
 
     } catch (\Exception $e) {
 
         DB::rollBack();
 
-        \Log::error('VTU ERROR:', ['error' => $e->getMessage()]);
+        \Log::error('AIRTIME ERROR', ['error' => $e->getMessage()]);
 
         return back()->with('error', 'System error, try again');
     }

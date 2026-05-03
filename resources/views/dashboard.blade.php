@@ -1,133 +1,163 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Dashboard') }}
+        <h2 class="text-lg font-semibold text-gray-800">
+            Dashboard
         </h2>
     </x-slot>
 
-    <!-- Modern Dashboard -->
-    <div class="min-h-screen bg-gray-100 p-4 pb-24">
-        
-        <!-- Greeting -->
-        <div class="text-lg font-semibold mb-2">Welcome Back 👋</div>
-        <div class="text-gray-600 mb-4">{{ Auth::user()->name ?? 'User' }}</div>
+<div class="min-h-screen bg-gray-100 pb-24">
 
-        <!-- Wallet Card -->
-        <div class="bg-gradient-to-r from-green-700 to-blue-60 text-white p-5 rounded-2xl shadow-md mb-6">
+    {{-- HEADER --}}
+    <div class="px-4 pt-4">
+        <div class="text-xs text-gray-500">Welcome back</div>
+        <div class="text-lg font-semibold">{{ Auth::user()->name ?? 'User' }}</div>
+    </div>
+
+    {{-- WALLET CARD --}}
+    <div class="px-4 mt-4">
+        <div class="bg-gradient-to-r from-green-600 to-emerald-500 text-white p-5 rounded-2xl shadow-lg">
+
             <div class="flex justify-between items-center">
                 <div>
-                    <p class="text-sm">Available Balance</p>
-                    <p class="text-3xl font-bold mt-1">  ₦{{ number_format(auth()->user()->wallet->balance ?? 10, 2) }}
-                        
-                    </p>
-
-
+                    <div class="text-xs opacity-80">Available Balance</div>
+                    <div class="text-2xl font-bold mt-1">
+                        ₦{{ number_format(auth()->user()->wallet->balance ?? 0, 2) }}
+                    </div>
                 </div>
-                <a href="{{ route('add-money') }}" 
-                   class="bg-white text-green-600 px-3 py-1 rounded-lg text-sm font-semibold hover:bg-white-50">
+
+                <a href="{{ route('add-money') }}"
+                   class="bg-white text-green-600 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-gray-100">
                     + Add Money
                 </a>
             </div>
-            <div class="mt-3 text-sm text-align-center">Referral Commission: ₦100.00</div>
+
+            <div class="flex justify-between mt-4 text-xs opacity-90">
+                <span>Referral Bonus: ₦100.00</span>
+                <a href="{{ route('transactions.index') }}" class="underline">
+                    History
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    {{-- QUICK SERVICES --}}
+    <div class="px-4 mt-6">
+        <h3 class="text-sm font-semibold mb-3 text-gray-700">Quick Services</h3>
+
+        <div class="grid grid-cols-4 gap-3">
+
+            <a href="{{ route('airtime') }}"
+               class="bg-white p-3 rounded-xl shadow-sm text-center hover:shadow transition">
+                <div class="text-2xl">📱</div>
+                <div class="text-xs mt-1">Airtime</div>
+            </a>
+
+            <a href="{{ route('data.index') }}"
+               class="bg-white p-3 rounded-xl shadow-sm text-center hover:shadow transition">
+                <div class="text-2xl">🌐</div>
+                <div class="text-xs mt-1">Data</div>
+            </a>
+
+            <a href="{{ route('tv') }}"
+               class="bg-white p-3 rounded-xl shadow-sm text-center hover:shadow transition">
+                <div class="text-2xl">📺</div>
+                <div class="text-xs mt-1">TV</div>
+            </a>
+
+            <a href="{{ route('electricity') }}"
+               class="bg-white p-3 rounded-xl shadow-sm text-center hover:shadow transition">
+                <div class="text-2xl">💡</div>
+                <div class="text-xs mt-1">Power</div>
+            </a>
+
+        </div>
+    </div>
+
+    {{-- RECENT TRANSACTIONS --}}
+    <div class="px-4 mt-6">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-semibold text-gray-700">Recent Transactions</h3>
+            <a href="{{ route('transactions.index') }}" class="text-xs text-blue-600">
+                View all
+            </a>
         </div>
 
-        <!-- Pay Bills Section -->
+        <div class="bg-white rounded-xl shadow-sm divide-y">
 
-        <div>
-            
-            <h3 class="text-md font-semibold mb-3">Pay Bills</h3>
+            @forelse(\App\Models\Transaction::where('user_id', auth()->id())->latest()->take(5)->get() as $tx)
 
+                <a href="{{ route('transactions.show', $tx->reference) }}"
+                   class="flex justify-between items-center p-3 hover:bg-gray-50">
 
-        <div class="grid grid-cols-4 gap-4 mb-6">
-            <a href="{{ route('airtime') }}" class="flex flex-col items-center bg-white p-3 rounded-xl shadow hover:shadow-md">
-                <div class="text-blue-500 text-3xl">📱</div>
-                <p class="text-sm mt-1">Airtime</p>
-            </a>
-            <a href="{{ route('data.index') }}" class="flex flex-col items-center bg-white p-3 rounded-xl shadow hover:shadow-md">
-                <div class="text-green-500 text-3xl">🌐</div>
-                <p class="text-sm mt-1">Data</p>
-            </a>
-            <a href="{{ route('tv') }}" class="flex flex-col items-center bg-white p-3 rounded-xl shadow hover:shadow-md">
-                <div class="text-yellow-500 text-3xl">📺</div>
-                <p class="text-sm mt-1">TV</p>
-            </a>
-            <a href="{{ route('electricity') }}" class="flex flex-col items-center bg-white p-3 rounded-xl shadow hover:shadow-md">
-                <div class="text-red-500 text-3xl">💡</div>
-                <p class="text-sm mt-1">Electricity</p>
-            </a>
-        </div> 
+                    <div>
+                        <div class="text-sm font-medium capitalize">
+                            {{ $tx->type }}
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            {{ $tx->created_at->format('d M, h:i A') }}
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        <div class="text-sm font-semibold">
+                            ₦{{ number_format($tx->amount) }}
+                        </div>
+
+                        <div class="text-xs
+                            @if($tx->status == 'success') text-green-600
+                            @elseif($tx->status == 'failed') text-red-600
+                            @else text-yellow-500 @endif">
+                            {{ ucfirst($tx->status) }}
+                        </div>
+                    </div>
+
+                </a>
+
+            @empty
+                <div class="p-4 text-center text-gray-400 text-sm">
+                    No transactions yet
+                </div>
+            @endforelse
+
         </div>
+    </div>
 
-        
-
-
-        <!-- Recent Activity -->
-       
-             <div class="mt-6 bg-white p-4 rounded-xl shadow">
-    <h3 class="text-lg font-semibold mb-3">Recent Activity</h3>
-    <!-- Table -->
-        <div class="overflow-x-auto">
-            <table class="w-full border">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="p-2 border">Date</th>
-                        <th class="p-2 border">Type</th>
-                        <th class="p-2 border">Reference</th>
-                        <th class="p-2 border">Amount</th>
-                        <th class="p-2 border">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    
-                        <tr>
-                            <td class="p-2 border">23/9/2939</td>
-                            <td class="p-2 border capitalize">data</td>
-                            <td class="p-2 border">dat-gf4564fg7yt67</td>
-                            <td class="p-2 border">500</td>
-                            <td class="p-2 border">Successfull
-                                <span class="px-2 py-1 rounded text-white
-                                   "> 
-                                    
-                                </span>
-                            </td>
-                        </tr>
-                    
-                        <!-- <tr>
-                            <td colspan="5" class="text-center p-4">
-                                No transactions found
-                            </td>
-                        </tr> -->
-                  
-                </tbody>
-            </table>
-
-    
-    
 </div>
 
+{{-- BOTTOM NAVIGATION --}}
+<nav class="fixed bottom-0 left-0 w-full bg-white border-t flex justify-around py-2">
 
-            
-        </div>
+    <a href="{{ route('dashboard') }}"
+       class="flex flex-col items-center text-green-600">
+        <span class="text-xl">🏠</span>
+        <span class="text-[10px]">Home</span>
+    </a>
 
+    <a href="{{ route('transactions.index') }}"
+       class="flex flex-col items-center text-gray-500 hover:text-green-600">
+        <span class="text-xl">📄</span>
+        <span class="text-[10px]">History</span>
+    </a>
 
-        
+    <a href="{{ route('airtime') }}"
+       class="flex flex-col items-center text-gray-500 hover:text-green-600">
+        <span class="text-xl">📱</span>
+        <span class="text-[10px]">Airtime</span>
+    </a>
 
-        <!-- Bottom Navigation -->
+    <a href="{{ route('data.index') }}"
+       class="flex flex-col items-center text-gray-500 hover:text-green-600">
+        <span class="text-xl">🌐</span>
+        <span class="text-[10px]">Data</span>
+    </a>
 
-        <nav class="fixed bottom-0 left-0 w-full bg-white shadow-inner flex justify-around py-3">
-            <a href="{{ route('dashboard') }}" class="flex flex-col items-center text-blue-600">
-                <span class="text-xl">🏠</span>
-                <span class="text-xs">Home</span>
-            </a>
-            <a href="{{ route('transactions.index') }}" class="flex flex-col items-center text-gray-500 hover:text-blue-600">
-                <span class="text-xl">📄</span>
-                <span class="text-xs">History</span>
-            </a>
+    <a href="{{ route('profile') }}"
+       class="flex flex-col items-center text-gray-500 hover:text-green-600">
+        <span class="text-xl">👤</span>
+        <span class="text-[10px]">Profile</span>
+    </a>
 
-            <a href="#" class="flex flex-col items-center text-gray-500 hover:text-blue-600">
-                <span class="text-xl">👤</span>
-                <span class="text-xs">Profile</span>
-            </a>
-        </nav>
-    </div>
+</nav>
+
 </x-app-layout>

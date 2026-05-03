@@ -5,19 +5,62 @@ use Illuminate\Support\Facades\Http;
 
 class VtpassService
 {
-    public function buyData($phone, $plan, $amount)
+    protected $baseUrl;
+    protected $headers;
+
+    public function __construct()
     {
-        return Http::withHeaders([
+        $this->baseUrl = env('VTPASS_BASE_URL', 'https://sandbox.vtpass.com');
+
+        $this->headers = [
             'api-key' => env('VTPASS_API_KEY'),
             'secret-key' => env('VTPASS_SECRET_KEY'),
-        ])->post(env('VTPASS_BASE_URL') . '/pay', [
-            'request_id' => uniqid(),
-            'serviceID' => 'mtn-data',
-            'billersCode' => $phone,
-            'variation_code' => $plan,
-            'amount' => $amount,
-            'phone' => $phone,
-        ])->json();
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+        ];
+    }
+
+    // 🔹 Get Data Plans
+    public function getDataPlans($network)
+    {
+        $response = Http::withHeaders($this->headers)
+            ->timeout(60)
+            ->get($this->baseUrl . '/api/service-variations', [
+                'serviceID' => $network . '-data'
+            ]);
+
+        return $response->json()['content']['variations'] ?? [];
+    }
+
+    // 🔹 Buy Data
+    public function buyData($reference, $phone, $network, $variationCode, $amount)
+    {
+        $response = Http::withHeaders($this->headers)
+            ->timeout(60)
+            ->post($this->baseUrl . '/api/pay', [
+                'request_id' => $reference,
+                'serviceID' => $network . '-data',
+                'billersCode' => $phone,
+                'variation_code' => $variationCode,
+                'amount' => $amount,
+                'phone' => $phone,
+            ]);
+
+        return $response->json();
+    }
+
+    // 🔹 Buy Airtime
+    public function buyAirtime($reference, $phone, $network, $amount)
+    {
+        $response = Http::withHeaders($this->headers)
+            ->timeout(60)
+            ->post($this->baseUrl . '/api/pay', [
+                'request_id' => $reference,
+                'serviceID' => $network,
+                'amount' => $amount,
+                'phone' => $phone,
+            ]);
+
+        return $response->json();
     }
 }
-

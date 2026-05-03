@@ -6,21 +6,18 @@ use App\Models\Transaction;
 
 class TransactionController extends Controller
 {
-    public function index(Request $request)
+    // 📜 HISTORY
+    public function index()
     {
-        $query = Transaction::where('user_id', auth()->id())
-            ->latest();
-
-        if ($request->type) {
-            $query->where('type', $request->type);
-        }
-
-        $transactions = $query->paginate(6);
+        $transactions = Transaction::where('user_id', auth()->id())
+            ->latest()
+            ->paginate(5);
 
         return view('transactions.index', compact('transactions'));
 
-//**********vtpass check*****************///
-        if ($result['code'] == '000') {
+
+        //**********vtpass check*****************///
+        if($result['code'] == '000') {
     $transaction->update([
         'status' => 'success',
         'processed' => true
@@ -31,5 +28,16 @@ class TransactionController extends Controller
     ]);
 }
     }
+
+    // 🧾 RECEIPT
+    public function show($reference)
+    {
+        $tx = Transaction::where('reference', $reference)
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        return view('transactions.show', compact('tx'));
+    }
+    
     
 }

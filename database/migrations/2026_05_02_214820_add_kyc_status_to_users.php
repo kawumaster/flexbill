@@ -9,22 +9,20 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::table('transactions', function (Blueprint $table) {
-            $table->decimal('profit', 10, 2)->default(0);
-            //
-        });
-    }
+    public function up()
+{
+    Schema::table('users', function (Blueprint $table) {
+        $table->string('kyc_status')->default('pending');
+    });
+}
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table) {
             //
         });
     }
 };
-

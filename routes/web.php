@@ -34,10 +34,19 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['au
 // })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+//profile
+Route::get('/profile', function () {
+    return view('profile.index');
+})->name('profile')->middleware('auth');
+//transaction
+
+Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+Route::get('/transactions/{reference}', [TransactionController::class, 'show'])->name('transactions.show');
 
 
 
@@ -87,6 +96,11 @@ Route::middleware(['auth'])->group(function () {
         ->name('transactions.index');
 });
 
+
+
+//kyc form
+Route::view('/kyc', 'profile.kyc')->name('kyc.form');
+
 //'''''admin'''''
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', function () {
@@ -134,6 +148,9 @@ Route::middleware(['auth'])->group(function () {
    
     
 });
+
+//auto load network
+Route::get('/data/plans/{network}', [App\Http\Controllers\DataController::class, 'getPlans']);
 
 ///testtt paystack
 Route::get('/test-paystack', function () {
