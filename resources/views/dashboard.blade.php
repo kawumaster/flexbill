@@ -1,21 +1,26 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-lg font-semibold text-gray-800">
-            Dashboard
+        <h2 class="text-lg font-semibold text-gray-800" >
+            <div class="text-xs text-gray-500">Welcome back</div>
+        <div class="text-lg font-semibold">{{ Auth::user()->name ?? 'User' }}</div>
+
+        <maquee><p class="text-xs opacity-80 text-right">data code *556*6#</p><maquee>
+
         </h2>
+          
     </x-slot>
 
-<div class="min-h-screen bg-gray-100 pb-24">
+<!-- <div class="min-h-screen bg-gray-100 pb-24"> -->
 
     {{-- HEADER --}}
-    <div class="px-4 pt-4">
+   <!--  <div class="px-4 pt-4">
         <div class="text-xs text-gray-500">Welcome back</div>
         <div class="text-lg font-semibold">{{ Auth::user()->name ?? 'User' }}</div>
-    </div>
+    </div> -->
 
     {{-- WALLET CARD --}}
     <div class="px-4 mt-4">
-        <div class="bg-gradient-to-r from-green-600 to-emerald-500 text-white p-5 rounded-2xl shadow-lg">
+        <div class="bg-gradient-to-r from-blue-600 transition-500 text-white p-5 rounded-2xl shadow-lg">
 
             <div class="flex justify-between items-center">
                 <div>
@@ -25,48 +30,93 @@
                     </div>
                 </div>
 
-                <a href="{{ route('add-money') }}"
-                   class="bg-white text-green-600 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-gray-100">
+                 <a href="{{ route('add-money') }}"
+                   class="bg-white text-purple-600 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-gray-100">
                     + Add Money
-                </a>
+                </a> 
+            @csrf
+           
+        
             </div>
+
+            <!-- vitual account -->
+            <div class="bg-gradient-to-r from-blue-600 p-4  shadow mt-4">
+
+    <!-- <h3 class="font-semibold mb-2">Fund Wallet (Bank Transfer)</h3>  -->
+
+    @if(auth()->user()->virtualAccount)
+        <div class="text-sm text-black">
+            <p><strong>Bank:</strong> {{ auth()->user()->virtualAccount->bank_name }}</p>
+            
+            <!-- ********copy botton******* -->
+<div class="flex items-center gap-3">
+    <p><strong>Account No:</strong>
+    <span id="accountNumber">
+         {{ auth()->user()->virtualAccount->account_number }}
+    </span>
+</p>
+<p>
+    <button
+        id="copyBtn"
+        onclick="copyAccountNumber()"
+        type="button"
+    >
+        📋
+    </button>
+</p>
+</div>
+            <p><strong>Name:</strong> {{ auth()->user()->virtualAccount->account_name }}</p>
+        </div>
+    @else
+        <form method="POST" action="{{ route('create.dva') }}">
+    @csrf
+    <button type="submit"
+        class="capitalize bg-gray-100 text-purple-600 px-3 py-1.5 rounded-lg text-xs font-semibold">
+        Generate Account
+    </button>
+</form>
+    @endif
+</div>
+<!-- vitual account End -->
 
             <div class="flex justify-between mt-4 text-xs opacity-90">
                 <span>Referral Bonus: ₦100.00</span>
                 <a href="{{ route('transactions.index') }}" class="underline">
-                    History
+                   Transaction History
                 </a>
             </div>
 
         </div>
     </div>
 
-    {{-- QUICK SERVICES --}}
-    <div class="px-4 mt-6">
-        <h3 class="text-sm font-semibold mb-3 text-gray-700">Quick Services</h3>
+    {{-- QUICK SERVICES --}}<!-- <button class="w-full bg-purple-600 text-white py-2 rounded-full">
+                Pay
+            </button> -->
+    <div class="px-6 mt-6 border-full">
+        <h3 class="text-md font-semibold mb-3 text-gray-700 underline">Quick Services</h3>
 
-        <div class="grid grid-cols-4 gap-3">
+        <div class="grid grid-cols-4 gap-3 ">
 
             <a href="{{ route('airtime') }}"
-               class="bg-white p-3 rounded-xl shadow-sm text-center hover:shadow transition">
+               class="bg-white p-3 rounded-xl shadow-sm text-center hover:shadow-lg transition">
                 <div class="text-2xl">📱</div>
                 <div class="text-xs mt-1">Airtime</div>
             </a>
 
             <a href="{{ route('data.index') }}"
-               class="bg-white p-3 rounded-xl shadow-sm text-center hover:shadow transition">
+               class="bg-white p-3 rounded-xl shadow-sm text-center hover:shadow-lg transition">
                 <div class="text-2xl">🌐</div>
                 <div class="text-xs mt-1">Data</div>
             </a>
 
             <a href="{{ route('tv') }}"
-               class="bg-white p-3 rounded-xl shadow-sm text-center hover:shadow transition">
+               class="bg-white p-3 rounded-xl shadow-sm text-center hover:shadow-lg transition">
                 <div class="text-2xl">📺</div>
                 <div class="text-xs mt-1">TV</div>
             </a>
 
             <a href="{{ route('electricity') }}"
-               class="bg-white p-3 rounded-xl shadow-sm text-center hover:shadow transition">
+               class="bg-white p-3 rounded-xl shadow-sm text-center hover:shadow-lg transition">
                 <div class="text-2xl">💡</div>
                 <div class="text-xs mt-1">Power</div>
             </a>
@@ -92,7 +142,15 @@
 
                     <div>
                         <div class="text-sm font-medium capitalize">
-                            {{ $tx->type }}
+                            @if($tx->type == 'wallet_funding_dva')
+                                DVA Funding
+                            @elseif($tx->type == 'wallet_funding_card')
+                                Card Funding
+                            @else
+                                {{ ucfirst(str_replace('_', ' ', $tx->type)) }}                            
+                            @endif
+                            <!-- {{ $tx->type }} -->
+
                         </div>
                         <div class="text-xs text-gray-500">
                             {{ $tx->created_at->format('d M, h:i A') }}
@@ -160,4 +218,22 @@
 
 </nav>
 
+
+<script>
+function copyAccountNumber() {
+
+    const accountNumber = document
+        .getElementById('accountNumber')
+        .textContent
+        .trim();
+
+    navigator.clipboard.writeText(accountNumber);
+
+    document.getElementById('copyBtn').innerHTML = 'Copied';
+
+    setTimeout(() => {
+        document.getElementById('copyBtn').innerHTML = '📋';
+    }, 5000);
+}
+</script>
 </x-app-layout>

@@ -61,9 +61,9 @@
                placeholder="Enter phone number" required>
 
         {{-- NETWORK --}}
-        <div class="grid grid-cols-4 gap-2 text-xs">
+        <div class=" network-crad grid grid-cols-4 gap-2 text-xs">
             @foreach(['mtn','airtel','glo','9mobile'] as $net)
-                <label class="border rounded-xl p-2 text-center cursor-pointer hover:bg-gray-50">
+                <label class=" border rounded-xl p-2 text-center cursor-pointer hover:bg-gray-100 bg-gray-100">
                     <input type="radio" name="network" value="{{ $net }}">
                     <div class="uppercase mt-1">{{ $net }}</div>
                 </label>
@@ -79,13 +79,13 @@
         </div>
 
         {{-- PLANS --}}
-        <div id="plansContainer" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div id="plansContainer" class="grid grid-cols-3 md:grid-cols-3 gap-3">
             <div class="text-gray-400 text-sm">Select network...</div>
         </div>
 
         {{-- BUTTON --}}
         <button id="buyBtn"
-                class="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-semibold">
+                class="w-full bg-purple-600 text-white py-3 rounded-xl text-sm font-semibold">
             Buy Data
         </button>
     </form>
@@ -97,12 +97,16 @@
     color: gray;
 }
 .tab.active {
-    color: black;
-    border-bottom: 2px solid #2563eb;
+    color: purple;
+    border-bottom: 2px solid purple;
     font-weight: 600;
 }
 .plan-card input:checked + div {
-    border: 2px solid #2563eb;
+    border: 2px solid purple;
+}
+
+.network-card .checked {
+    border: 2px solid purple;
 }
 </style>
 
@@ -207,7 +211,7 @@ function renderPlans() {
                    value="${plan.variation_code}"
                    data-amount="${plan.variation_amount}" hidden>
 
-            <div class="bg-gray-50 rounded-2xl p-3 text-center hover:shadow">
+            <div class="bg-gray-100 rounded-2xl p-3 text-center hover:shadow">
 
                 <div class="text-xs text-gray-500">
                     ${plan.name.match(/\\d+\\s?day/i) || ''}
@@ -221,7 +225,7 @@ function renderPlans() {
                     ₦${parseInt(plan.variation_amount).toLocaleString()}
                 </div>
 
-                <div class="text-blue-600 font-bold text-sm">
+                <div class="text-purple-600 font-bold text-sm">
                     Pay ₦${parseInt(plan.variation_amount).toLocaleString()}
                 </div>
 

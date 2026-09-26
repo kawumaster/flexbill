@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use App\Models\Service;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use App\Services\VtpassService;
 
 class DataController extends Controller
 {
@@ -45,12 +46,13 @@ public function getPlans($network)
     return response()->json($data['content']['variations'] ?? []);
 }
 
-public function buy(Request $request)
+
+public function buy(Request $request, VtpassService $vtpass)
 {
     $request->validate([
         'phone' => 'required|digits:11',
         'variation_code' => 'required',
-        'network' => 'required|in:mtn,airtel,glo,9mobile'
+        'network' => 'required'
     ]);
 
     $user = auth()->user();
@@ -59,26 +61,15 @@ public function buy(Request $request)
 
     try {
 
-        // 🔒 lock wallet
         $wallet = $user->wallet()->lockForUpdate()->first();
 
-        $serviceID = $request->network . '-data';
-
-        // ✅ fetch correct plans based on network
-        $response = Http::timeout(60)->withHeaders([
-            'api-key' => env('VTPASS_API_KEY'),
-            'secret-key' => env('VTPASS_SECRET_KEY'),
-            'Content-Type' => 'application/json',
-        ])->get('https://sandbox.vtpass.com/api/service-variations', [
-            'serviceID' => $serviceID
-        ]);
-
-        $plans = $response->json()['content']['variations'] ?? [];
+        // 🔹 get fresh plans from service
+        $plans = $vtpass->getDataPlans($request->network);
 
         $plan = collect($plans)->firstWhere('variation_code', $request->variation_code);
 
         if (!$plan) {
-            return back()->with('error', 'Invalid data plan');
+            return back()->with('error', 'Invalid plan');
         }
 
         $amount = (float) $plan['variation_amount'];
@@ -87,11 +78,11 @@ public function buy(Request $request)
             return back()->with('error', 'Insufficient balance');
         }
 
-        // 💸 deduct
+        // deduct
         $wallet->balance -= $amount;
         $wallet->save();
 
-        // 🧾 transaction
+        // transaction
         $tx = Transaction::create([
             'user_id' => $user->id,
             'type' => 'data',
@@ -100,21 +91,14 @@ public function buy(Request $request)
             'reference' => uniqid('DATA-')
         ]);
 
-        // 🚀 API CALL
-        $response = Http::timeout(60)->withHeaders([
-            'api-key' => env('VTPASS_API_KEY'),
-            'secret-key' => env('VTPASS_SECRET_KEY'),
-            'Content-Type' => 'application/json',
-        ])->post('https://sandbox.vtpass.com/api/pay', [
-            'request_id' => $tx->reference,
-            'serviceID' => $serviceID, // ✅ FIXED
-            'billersCode' => $request->phone,
-            'variation_code' => $request->variation_code,
-            'amount' => $amount,
-            'phone' => $request->phone,
-        ]);
-
-        $result = $response->json();
+        // 🔹 call service
+        $result = $vtpass->buyData(
+            $tx->reference,
+            $request->phone,
+            $request->network,
+            $request->variation_code,
+            $amount
+        );
 
         $desc = strtolower($result['response_description'] ?? '');
 
@@ -124,10 +108,10 @@ public function buy(Request $request)
 
             DB::commit();
 
-            return back()->with('success', 'Data purchased successfully');
+            return back()->with('success', 'Data successful');
         }
 
-        // ❌ refund
+        // refund
         $wallet->balance += $amount;
         $wallet->save();
 
@@ -135,13 +119,13 @@ public function buy(Request $request)
 
         DB::commit();
 
-        return back()->with('error', 'Transaction failed, refunded');
+        return back()->with('error', 'Failed → Refunded');
 
     } catch (\Exception $e) {
 
         DB::rollBack();
 
-        return back()->with('error', 'System error, try again');
+        return back()->with('error', 'System error');
     }
 }
 }

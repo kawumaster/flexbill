@@ -7,9 +7,11 @@ use App\Http\Controllers\WalletController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataController;
 use App\Http\Controllers\TransactionController;
-// use App\Http\Controllers\UserController;
-use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\UserController;
+// use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\VirtualAccountController;
+use App\Http\Controllers\WebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,8 +51,6 @@ Route::get('/transactions', [TransactionController::class, 'index'])->name('tran
 Route::get('/transactions/{reference}', [TransactionController::class, 'show'])->name('transactions.show');
 
 
-
-
 // services
 
 Route::middleware(['auth'])->group(function () {
@@ -67,10 +67,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/airtime', [AirtimeController::class, 'index'])->name('airtime');
     Route::post('/buy-airtime', [AirtimeController::class, 'buyAirtime'])->middleware('auth');
 });
-
-
-
-
 
 //data
 
@@ -192,10 +188,21 @@ Route::get('/payment/callback', function () {
 });
 //paystac //webhook //vtpass
 
-Route::post('/fund-wallet', [PaymentController::class, 'fundWallet'])->middleware('auth');
- Route::post('/paystack/webhook', [PaymentController::class, 'webhook']);
+// *************************direct funding url*********************
 
+// Route::post('/fund-wallet', [PaymentController::class, 'fundWallet'])->middleware('auth');
+ 
+ // ************************direct funding url*********************
 
+//paystack virtual account
+
+//
+
+ // Route::post('/paystack/webhook', [WebhookController::class, 'paystack']);
+
+Route::post('/create-dva', [VirtualAccountController::class, 'create'])
+    ->name('create.dva')
+    ->middleware('auth');
 
 
 require __DIR__.'/auth.php';

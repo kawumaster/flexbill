@@ -25,7 +25,7 @@ class PaymentController extends Controller
         Transaction::create([
             'user_id' => auth()->id(),
             'reference' => $reference,
-            'type' => 'wallet_funding',
+            'type' => 'wallet_funding_card',
             'amount' => $request->amount,
             'status' => 'pending',
             'processed' => false

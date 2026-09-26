@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+
 use App\Models\Wallet;
 use App\Models\Transaction;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,18 +17,51 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'phone',
     ];
 
-    // 💰 Wallet relation
+
+
+    /**
+     * Automatically create wallet after user registration
+     */
+    protected static function booted()
+    {
+        static::created(function ($user) {
+            Wallet::firstOrCreate(
+                ['user_id' => $user->id],
+                ['balance' => 0]
+            );
+        });
+    }
+
+
+
+    /**
+     * Wallet Relationship
+     */
     public function wallet()
     {
         return $this->hasOne(Wallet::class);
     }
 
-    // 💳 Transactions relation
+
+    
+
+    /**
+     * Transactions Relationship
+     */
     public function transactions()
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    /**
+     * Virtual Account Relationship
+     */
+    public function virtualAccount()
+    {
+        return $this->hasOne(\App\Models\VirtualAccount::class);
     }
 
     protected $hidden = [

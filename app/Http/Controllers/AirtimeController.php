@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use App\Models\Service;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use App\Services\VtpassService;
 
 
 // use App\Http\Controllers\AirtimeController;
@@ -29,7 +30,7 @@ private function detectNetwork($phone)
     $prefix5 = substr($phone, 0, 5);
 
     $networks = [
-        'mtn' => ['0801','0803','0806','0813','0816','0810','0814','0903','0906','0703','0706','0704','07025','07026'],
+        'mtn' => ['0913','0801','0803','0806','0813','0816','0810','0814','0903','0906','0703','0706','0704','07025','07026'],
         'glo' => ['0805','0807','0815','0811','0905','0705'],
         'airtel' => ['0802','0808','0812','0701','0708','0902','0907','0901'],
         '9mobile' => ['0809','0817','0818','0909','0908']
@@ -44,11 +45,11 @@ private function detectNetwork($phone)
     return null;
 }
 
-public function buyAirtime(Request $request)
+public function buyAirtime(Request $request, VtpassService $vtpass)
 {
     $request->validate([
         'phone' => 'required|digits:11',
-        'amount' => 'required|numeric|min:50'
+        'amount' => 'required|numeric|min:100'
     ]);
 
     $network = $this->detectNetwork($request->phone);
@@ -63,19 +64,15 @@ public function buyAirtime(Request $request)
 
     try {
 
-        // 🔒 lock wallet
         $wallet = $user->wallet()->lockForUpdate()->first();
 
         if ($wallet->balance < $request->amount) {
-            DB::rollBack(); // ✅ FIX
             return back()->with('error', 'Insufficient balance');
         }
 
-        // 💸 deduct
         $wallet->balance -= $request->amount;
         $wallet->save();
 
-        // 🧾 transaction
         $tx = Transaction::create([
             'user_id' => $user->id,
             'type' => 'airtime',
@@ -84,36 +81,26 @@ public function buyAirtime(Request $request)
             'reference' => uniqid('VTU-')
         ]);
 
-        // 🚀 API CALL
-        $response = Http::withHeaders([
-            'api-key' => env('VTPASS_API_KEY'),
-            'secret-key' => env('VTPASS_SECRET_KEY'),
-            'Content-Type' => 'application/json',
-        ])->post(env('VTPASS_BASE_URL').'/api/pay', [
-            'request_id' => $tx->reference,
-            'serviceID' => $network,
-            'amount' => $request->amount,
-            'phone' => $request->phone,
-        ]);
-
-        $result = $response->json();
-
-        \Log::info('AIRTIME RESPONSE', $result ?? []);
+        // 🔹 call service
+        $result = $vtpass->buyAirtime(
+            $tx->reference,
+            $request->phone,
+            $network,
+            $request->amount
+        );
 
         $desc = strtolower($result['response_description'] ?? '');
-        $code = $result['code'] ?? null;
 
-        // ✅ STRONG SUCCESS CHECK
-        if ($code == '000' || str_contains($desc, 'successful')) {
+        if (str_contains($desc, 'successful')) {
 
             $tx->update(['status' => 'success']);
 
             DB::commit();
 
-            return back()->with('success', 'Airtime sent successfully');
+            return back()->with('success', 'Airtime sent');
         }
 
-        // ❌ refund
+        // refund
         $wallet->balance += $request->amount;
         $wallet->save();
 
@@ -127,9 +114,7 @@ public function buyAirtime(Request $request)
 
         DB::rollBack();
 
-        \Log::error('AIRTIME ERROR', ['error' => $e->getMessage()]);
-
-        return back()->with('error', 'System error, try again');
+        return back()->with('error', 'System error');
     }
 }
 }

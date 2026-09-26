@@ -59,11 +59,12 @@
 
             <input type="number" name="amount" id="amount"
                    class="w-full border rounded-lg p-2 text-sm mb-4"
-                   placeholder="₦ 50 - 50,000" required>
+                   placeholder="₦ 100 - 5,000" required>
 
             <button class="w-full bg-purple-600 text-white py-2 rounded-full">
-                Pay
+                Pays
             </button>
+            
         </form>
 
     </div>

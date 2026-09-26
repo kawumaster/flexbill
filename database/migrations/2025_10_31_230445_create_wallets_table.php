@@ -19,9 +19,14 @@ return new class extends Migration
         $table->decimal('balance', 12, 2)->default(0);
         $table->timestamps();
 
-        table->foreign('user_id')->references('id')->onDelete('cascade');
+        $table->foreign('user_id')
+      ->references('id')
+      ->on('users')
+      ->onDelete('cascade');
     });
 }
+
+
 
 
     /**

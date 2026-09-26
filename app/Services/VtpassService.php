@@ -10,7 +10,7 @@ class VtpassService
 
     public function __construct()
     {
-        $this->baseUrl = env('VTPASS_BASE_URL', 'https://sandbox.vtpass.com');
+        $this->baseUrl = env('VTPASS_BASE_URL', 'https://vtpass.com');
 
         $this->headers = [
             'api-key' => env('VTPASS_API_KEY'),

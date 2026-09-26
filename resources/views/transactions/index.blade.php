@@ -16,7 +16,14 @@
 
                 <div>
                     <div class="font-semibold text-sm capitalize">
-                        {{ $tx->type }}
+                        @if($tx->type == 'wallet_funding_dva')
+    DVA Funding
+@elseif($tx->type == 'wallet_funding_card')
+    Card Funding
+@else
+    {{ ucfirst(str_replace('_', ' ', $tx->type)) }}
+@endif
+                        <!-- {{ $tx->type }} -->
                     </div>
 
                     <div class="text-xs text-gray-500">

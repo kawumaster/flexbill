@@ -16,4 +16,39 @@
     </form>
 
 </div>
+{{-- BOTTOM NAVIGATION --}}
+<nav class="fixed bottom-0 left-0 w-full bg-white border-t flex justify-around py-2">
+
+    <a href="{{ route('dashboard') }}"
+       class="flex flex-col items-center text-green-600">
+        <span class="text-xl">🏠</span>
+        <span class="text-[10px]">Home</span>
+    </a>
+
+    <a href="{{ route('transactions.index') }}"
+       class="flex flex-col items-center text-gray-500 hover:text-green-600">
+        <span class="text-xl">📄</span>
+        <span class="text-[10px]">History</span>
+    </a>
+
+    <a href="{{ route('airtime') }}"
+       class="flex flex-col items-center text-gray-500 hover:text-green-600">
+        <span class="text-xl">📱</span>
+        <span class="text-[10px]">Airtime</span>
+    </a>
+
+    <a href="{{ route('data.index') }}"
+       class="flex flex-col items-center text-gray-500 hover:text-green-600">
+        <span class="text-xl">🌐</span>
+        <span class="text-[10px]">Data</span>
+    </a>
+
+    <a href="{{ route('profile') }}"
+       class="flex flex-col items-center text-gray-500 hover:text-green-600">
+        <span class="text-xl">👤</span>
+        <span class="text-[10px]">Profile</span>
+    </a>
+
+</nav>
+
 </x-app-layout>

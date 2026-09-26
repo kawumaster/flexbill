@@ -25,7 +25,7 @@
     <div class="text-center">
         <div class="text-2xl font-bold">
             ₦{{ number_format($tx->amount) }}
-        </div>
+                    </div>
     </div>
 
     <hr>
@@ -53,10 +53,21 @@
     <hr>
 
     {{-- ACTION --}}
-    <a href="{{ route('transactions.index') }}"
-       class="block text-center bg-gray-100 py-2 rounded-lg text-sm">
-        Back to History
+    <!-- <a href="{{ route('transactions.index') 
+}}" -->
+<div class="block justify-between gap-3"><a href="{{ route('dashboard') 
+}}"
+
+       class="block text-center text-gray-100 bg-gray-600 py-2 rounded-lg text-sm">
+        Download
     </a>
+    <br>
+<a href="{{ route('dashboard') 
+}}"
+
+       class="block text-center text-gray-100 bg-gray-800 py-2 rounded-lg text-sm">
+        Back to Homepage
+    </a></div>
 
 </div>
 </x-app-layout>
